@@ -62,7 +62,7 @@ If Bedrock returns an access or model-not-found error, check the region and mode
 1. In Lambda, open **Configuration > Function URL**.
 2. Choose **Create function URL**.
 3. Set **Auth type** to `NONE` for this browser-only demo.
-4. Configure CORS with allowed origin `*` during initial testing, allowed method `POST`, and allowed header `Content-Type`.
+4. Configure CORS with allowed origin `*` during initial testing, allowed methods `POST` and `OPTIONS`, and allowed header `Content-Type`.
 5. Create the URL and copy the generated endpoint.
 
 The URL is public when auth is `NONE`. Input limits do not prevent abuse by themselves. Restrict the origin, monitor costs, and disable the URL when you are not testing.
@@ -88,7 +88,7 @@ The statement id (FunctionURLAllowInvokeAction) provided already exists.
 the Lambda Function URL permission already exists. Do not create another Function URL. Update the existing one instead:
 
 1. Open Lambda > `study-signal` > **Configuration > Function URL**.
-2. Choose **Edit** on the existing Function URL.
+2. Confirm a Function URL is already listed. Use the **Edit** button for that listed URL; do not choose **Create function URL** again.
 3. Set CORS to:
    - Allowed origin: `*` for initial testing, or your exact Amplify URL
    - Allowed methods: `POST` and `OPTIONS`
