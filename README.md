@@ -1,67 +1,177 @@
 # Instant Research & Study Assistant
 
-A deliberately small three-service app: AWS Amplify hosts the static page, an AWS Lambda Function URL receives the request, and Amazon Bedrock (Claude 3 Haiku) creates the study guide. There is no API Gateway, S3 bucket, database, or framework dependency.
+Turn lecture notes, research abstracts, code, Word documents, and text-based PDFs into a focused study guide with:
 
-The upload control reads `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files locally in the browser using CDN-loaded PDF.js and Mammoth. It does not upload a file to AWS: only the extracted, capped text is sent to Lambda. Scanned/image-only PDFs need OCR, which is intentionally not included.
+- One core thesis or concept
+- Key technical takeaways
+- Three quick review questions
 
-## 1. Create the Lambda
+## Why This Architecture
 
-1. In AWS Lambda, choose **Create function**, select **Author from scratch**, runtime **Python 3.12**, and name it `study-signal`.
-2. In **Configuration > Permissions**, open the execution role and add the statements in [`iam-policy.json`](iam-policy.json) as an inline policy. The policy grants only model invocation and basic CloudWatch Logs access.
-3. In **Configuration > General configuration**, set a timeout of 30 seconds and memory of 256 MB.
-4. In **Configuration > Environment variables**, optionally set `BEDROCK_MODEL_ID` to `anthropic.claude-3-haiku-20240307-v1:0`.
-5. In **Code**, replace the default file with [`lambda_function.py`](lambda_function.py), then **Deploy**. Set the handler to `lambda_function.lambda_handler` if needed.
-6. Ensure the Claude 3 Haiku model is enabled in the same AWS region under the Amazon Bedrock model access page. Availability varies by region.
+This project intentionally uses exactly three AWS services:
 
-## 2. Create the Lambda Function URL
+1. **AWS Amplify Hosting** serves the static frontend.
+2. **AWS Lambda** receives the request through a Lambda Function URL.
+3. **Amazon Bedrock** uses Claude 3 Haiku to generate the study guide.
 
-1. Open **Configuration > Function URL > Create function URL**.
-2. Set **Auth type** to `NONE`. Confirm the public-access warning. The endpoint is protected by input limits and does not accept AWS credentials from the browser.
-3. Configure CORS with allowed origin `*` for a quick demo, allowed methods `POST` (the handler also answers `OPTIONS`), and allowed headers `Content-Type`. For production, replace `*` with the exact Amplify domain.
-4. Copy the generated Function URL into `FUNCTION_URL` in [`app.js`](app.js). Keep the trailing slash exactly as AWS provides it.
+There is no API Gateway, S3 bucket, database, authentication service, or frontend framework. Documents are parsed locally in the browser. Only extracted text is sent to Lambda.
 
-The Lambda handler returns standard CORS headers on success and errors. Its expected request is `POST {"text":"..."}` and its response is `{ "analysis": { "core_thesis": ..., "key_technical_takeaways": [...], "study_questions": [...] } }`.
+## Before You Start
 
-## 3. Deploy with Amplify Hosting
+You need:
 
-The easiest path is Git-based Amplify Hosting:
+- An AWS account and an AWS region where Claude 3 Haiku is available
+- A GitHub account and repository access
+- AWS Bedrock model access enabled for `anthropic.claude-3-haiku-20240307-v1:0`
+- The files in this repository
 
-1. Put this folder in a GitHub, GitLab, Bitbucket, or CodeCommit repository.
-2. In AWS Amplify, choose **Host web app**, select the Git provider, authorize it, and choose the repository and branch.
-3. When prompted for build settings, use the repository root as the app root. No build command or output directory is required because this is static HTML. If Amplify requires a build specification, use:
+Choose one AWS region and use it consistently for Bedrock and Lambda. Model availability and pricing vary by region.
 
-   ```yaml
-   version: 1
-   frontend:
-     phases:
-       build:
-         commands: []
-     artifacts:
-       baseDirectory: /
-       files:
-         - '**/*'
-     cache:
-       paths: []
-   ```
+## Step 1: Create the Lambda Function
 
-4. Save and deploy. Open the Amplify URL and submit a small test abstract.
-5. After confirming the endpoint works, change Lambda CORS allowed origin from `*` to the Amplify domain and update the handler's `Access-Control-Allow-Origin` value to the same origin.
+1. Open the AWS Lambda console.
+2. Choose **Create function** and select **Author from scratch**.
+3. Set the function name to `study-signal`.
+4. Select runtime **Python 3.12**.
+5. Create a new execution role with basic Lambda permissions.
+6. Open **Configuration > General configuration** and set memory to `256 MB` and timeout to `30 seconds`.
+7. Open **Configuration > Environment variables** and add `BEDROCK_MODEL_ID` with value `anthropic.claude-3-haiku-20240307-v1:0`.
+8. Open the **Code** tab and replace the default file with [`lambda_function.py`](lambda_function.py).
+9. Set the handler to `lambda_function.lambda_handler` if the console shows a different handler.
+10. Choose **Deploy**.
 
-## Local check
+The handler accepts `POST {"text":"..."}`, limits input to 20,000 characters, invokes Bedrock, and returns structured JSON with CORS headers.
 
-Open `index.html` directly for the layout, or serve the folder with any static file server. The page will intentionally show an error until `FUNCTION_URL` in `app.js` has been replaced. No AWS credentials belong in the frontend.
+## Step 2: Give Lambda the Minimum Permissions
 
-## Cost and production notes
+Open the Lambda function's **Configuration > Permissions** page. Open the execution role in IAM, choose **Add permissions > Create inline policy**, select the JSON editor, and paste the contents of [`iam-policy.json`](iam-policy.json).
 
-Bedrock charges per input and output token. To avoid burning free credits on experiments:
+The policy allows only `bedrock:InvokeModel` for Claude 3 Haiku foundation models and basic CloudWatch Logs actions. Save the policy and return to Lambda. Do not add administrator permissions to the Lambda role.
 
-- Keep the 20,000-character input cap and 900-token output cap. Do not raise them casually.
-- Test with short abstracts or small code excerpts first; long documents multiply input-token cost.
-- Do not add automatic retries, polling, streaming, or analysis on every keystroke. This app calls Bedrock only after the button is pressed.
-- Set an AWS Budgets alert and a small monthly cost budget before sharing the URL. Budgets alerts notify you; they are not a hard usage cutoff.
-- Check the Bedrock pricing page for your region and model before inviting others. Free-tier eligibility and limits can change.
-- Keep the Function URL private during testing or restrict CORS to your Amplify domain. A public unauthenticated URL can be abused and incur charges.
-- Delete or disable the Lambda Function URL when you are done experimenting, and remove the Amplify app if it is no longer needed.
-- Never put AWS keys in `app.js`, commit them to GitHub, or paste them into the browser. The Lambda execution role is the only place that needs AWS permissions.
+## Step 3: Enable Bedrock Model Access
 
-For a public launch, add authentication or a separate abuse-control service, but that would exceed this project's strict three-service constraint.
+1. Open the Amazon Bedrock console in the same region as the Lambda function.
+2. Open **Model access**.
+3. Request or enable access to Anthropic Claude 3 Haiku.
+4. Wait until access is granted before testing Lambda.
+
+If Bedrock returns an access or model-not-found error, check the region and model access first.
+
+## Step 4: Create the Lambda Function URL
+
+1. In Lambda, open **Configuration > Function URL**.
+2. Choose **Create function URL**.
+3. Set **Auth type** to `NONE` for this browser-only demo.
+4. Configure CORS with allowed origin `*` during initial testing, allowed method `POST`, and allowed header `Content-Type`.
+5. Create the URL and copy the generated endpoint.
+
+The URL is public when auth is `NONE`. Input limits do not prevent abuse by themselves. Restrict the origin, monitor costs, and disable the URL when you are not testing.
+
+## Step 5: Connect the Frontend to Lambda
+
+Open [`app.js`](app.js) and replace:
+
+```javascript
+const FUNCTION_URL = "REPLACE_WITH_LAMBDA_FUNCTION_URL";
+```
+
+with the Function URL copied from AWS. Keep the URL in the frontend only; never put AWS access keys in this file.
+
+## Step 6: Understand Document Uploads
+
+The upload control supports `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files. PDF.js and Mammoth are loaded from public CDNs by [`index.html`](index.html).
+
+The browser extracts text locally, caps it at 20,000 characters, and sends only that text to Lambda. Files are not stored in AWS. Scanned or image-only PDFs will not produce useful text because this project does not include OCR. Large files are limited to 10 MB before extraction.
+
+## Step 7: Test the Backend
+
+Use a small request first. Replace the URL below with your Function URL:
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://YOUR_FUNCTION_ID.lambda-url.YOUR_REGION.on.aws/" `
+  -ContentType "application/json" `
+  -Body '{"text":"A cache stores frequently used data closer to the application to reduce latency, at the cost of invalidation complexity."}'
+```
+
+A successful response looks like:
+
+```json
+{
+  "analysis": {
+    "core_thesis": "...",
+    "key_technical_takeaways": ["..."],
+    "study_questions": ["...", "...", "..."]
+  }
+}
+```
+
+If the request fails, check CloudWatch logs for the function and verify Bedrock model access, the model ID, the region, and the Lambda execution role.
+
+## Step 8: Push to GitHub
+
+This project is published at [github.com/shatteredcode69/instant-community-study-research-assistant](https://github.com/shatteredcode69/instant-community-study-research-assistant).
+
+For a new copy of the project:
+
+```powershell
+git init
+git add .
+git commit -m "Initial study assistant"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
+git push -u origin main
+```
+
+The included `.gitignore` prevents common Python caches, virtual environments, AWS folders, and `.env` files from being committed. Always inspect files before pushing.
+
+## Step 9: Deploy the Frontend with Amplify
+
+1. Open the AWS Amplify console and choose **Host web app**.
+2. Select GitHub and authorize AWS Amplify.
+3. Select the repository and branch.
+4. Use the repository root as the app root.
+5. Because this is static HTML, use no build command and deploy the repository files directly.
+6. If Amplify asks for a build specification, use:
+
+```yaml
+version: 1
+frontend:
+  phases:
+    build:
+      commands: []
+  artifacts:
+    baseDirectory: /
+    files:
+      - '**/*'
+  cache:
+    paths: []
+```
+
+7. Deploy and open the Amplify URL.
+8. Paste a short abstract, choose **Build study guide**, and test a small upload.
+9. After the Amplify URL works, replace the Function URL CORS origin `*` with the exact Amplify domain.
+
+Keep `Access-Control-Allow-Origin` in the Lambda response aligned with that domain for a tighter production configuration.
+
+## Local Preview
+
+Open [`index.html`](index.html) directly or serve the directory with a static server. The page will show an endpoint error until `FUNCTION_URL` in [`app.js`](app.js) is configured.
+
+## Cost Precautions
+
+Bedrock charges for input and output tokens. A public Lambda Function URL can also be abused, so treat this as a guarded demo rather than an open public service.
+
+- Start with short abstracts or small code excerpts.
+- Keep the 20,000-character input cap and 900-token output cap.
+- Do not add automatic retries, polling, streaming, or analysis on every keystroke.
+- Create an AWS Budget alert with a small monthly amount before sharing the app.
+- A Budget alert notifies you; it is not a guaranteed hard cutoff.
+- Check current Bedrock pricing and free-tier terms for your region.
+- Use a restricted Amplify origin instead of `*` after initial testing.
+- Disable or delete the Lambda Function URL when the experiment is over.
+- Never commit AWS keys, tokens, or credentials to GitHub.
+- Monitor CloudWatch logs and Bedrock usage while testing.
+
+For real public use, add authentication and abuse controls. Those require additional architecture beyond this intentionally constrained three-service version.
