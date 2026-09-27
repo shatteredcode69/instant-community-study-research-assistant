@@ -6,8 +6,14 @@ const documentInput = document.querySelector("#document-input");
 const fileStatus = document.querySelector("#file-status");
 const button = document.querySelector("#submit-button");
 const results = document.querySelector("#results-panel");
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const themeToggle = document.querySelector("#theme-toggle");
+const themeIcon = document.querySelector("#theme-icon");
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_TEXT_CHARACTERS = 20000;
+
+if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+setTheme(localStorage.getItem("study-signal-theme") || "dark");
+themeToggle.addEventListener("click", () => setTheme(document.body.dataset.theme === "dark" ? "light" : "dark"));
 
 textInput.addEventListener("input", () => {
   updateCharacterCount();
@@ -23,7 +29,7 @@ documentInput.addEventListener("change", async () => {
     return;
   }
   try {
-    const text = await file.text();
+    const text = await extractText(file);
     textInput.value = text.slice(0, MAX_TEXT_CHARACTERS);
     updateCharacterCount();
     fileStatus.textContent = text.length > MAX_TEXT_CHARACTERS ? `${file.name} loaded and trimmed to 20,000 characters` : `${file.name} loaded`;
@@ -70,3 +76,26 @@ function toArray(value) { return Array.isArray(value) ? value : value ? [value] 
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
 function showError(message) { results.innerHTML = `<div class="error-message"><h2>Could not build the guide.</h2><p>${escapeHtml(message)}</p></div>`; }
 function updateCharacterCount() { count.textContent = `${textInput.value.length.toLocaleString()} / ${MAX_TEXT_CHARACTERS.toLocaleString()}`; }
+function setTheme(theme) { document.body.dataset.theme = theme; themeIcon.innerHTML = theme === "dark" ? "&#9788;" : "&#9790;"; themeToggle.setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} theme`); localStorage.setItem("study-signal-theme", theme); }
+
+async function extractText(file) {
+  const extension = file.name.split(".").pop().toLowerCase();
+  if (["txt", "md", "csv", "json"].includes(extension)) return file.text();
+  if (extension === "docx") {
+    if (!window.mammoth) throw new Error("Word document support could not be loaded. Check your connection and try again.");
+    const result = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return result.value;
+  }
+  if (extension === "pdf") {
+    if (!window.pdfjsLib) throw new Error("PDF support could not be loaded. Check your connection and try again.");
+    const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      pages.push(content.items.map((item) => item.str).join(" "));
+    }
+    return pages.join("\n\n");
+  }
+  throw new Error("Use a TXT, MD, CSV, JSON, DOCX, or PDF file.");
+}

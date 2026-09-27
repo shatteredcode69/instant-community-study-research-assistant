@@ -2,7 +2,7 @@
 
 A deliberately small three-service app: AWS Amplify hosts the static page, an AWS Lambda Function URL receives the request, and Amazon Bedrock (Claude 3 Haiku) creates the study guide. There is no API Gateway, S3 bucket, database, or framework dependency.
 
-The upload control reads `.txt`, `.md`, `.csv`, and `.json` files locally in the browser. It does not upload a file to AWS: only the extracted, capped text is sent to Lambda. PDF and Word parsing are intentionally not included because adding reliable parsing or storage would complicate this lightweight three-service design.
+The upload control reads `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files locally in the browser using CDN-loaded PDF.js and Mammoth. It does not upload a file to AWS: only the extracted, capped text is sent to Lambda. Scanned/image-only PDFs need OCR, which is intentionally not included.
 
 ## 1. Create the Lambda
 

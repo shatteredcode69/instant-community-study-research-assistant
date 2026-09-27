@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -17,7 +19,12 @@
           <span class="brand-mark" aria-hidden="true">S</span>
           <span>Study Signal</span>
         </a>
-        <span class="service-badge"><span class="status-dot"></span> Bedrock powered</span>
+        <div class="header-actions">
+          <span class="service-badge"><span class="status-dot"></span> Bedrock powered</span>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+            <span id="theme-icon" aria-hidden="true">&#9788;</span>
+          </button>
+        </div>
       </header>
 
       <section class="intro" aria-labelledby="page-title">
@@ -42,8 +49,8 @@
               <span aria-hidden="true">&#8593;</span>
               <span>Upload text document</span>
             </label>
-            <input id="document-input" class="sr-only" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" />
-            <span id="file-status" class="file-status">TXT, MD, CSV, or JSON · max 2 MB</span>
+            <input id="document-input" class="sr-only" type="file" accept=".txt,.md,.csv,.json,.docx,.pdf,text/plain,text/markdown,text/csv,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" />
+            <span id="file-status" class="file-status">TXT, MD, CSV, JSON, DOCX, or PDF · max 10 MB</span>
           </div>
           <div class="input-footer">
             <span class="input-hint">Files stay in your browser. Only the extracted text is sent for analysis.</span>
