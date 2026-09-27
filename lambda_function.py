@@ -10,7 +10,7 @@ import boto3
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0")
 MAX_INPUT_CHARACTERS = 20_000
 bedrock_runtime = boto3.client("bedrock-runtime")
 
@@ -64,14 +64,13 @@ Keep the answer grounded in the source. For code, call out important architectur
 SOURCE MATERIAL:
 {source_text}"""
     request_body = {
-        "anthropic_version": "2023-06-01",
-        "max_tokens": 900,
-        "temperature": 0.2,
-        "messages": [{"role": "user", "content": prompt}],
+        "schemaVersion": "messages-v1",
+        "messages": [{"role": "user", "content": [{"text": prompt}]}],
+        "inferenceConfig": {"max_new_tokens": 900, "temperature": 0.2},
     }
     result = bedrock_runtime.invoke_model(modelId=BEDROCK_MODEL_ID, body=json.dumps(request_body))
     model_body = json.loads(result["body"].read())
-    model_text = model_body["content"][0]["text"]
+    model_text = model_body["output"]["message"]["content"][0]["text"]
     return parse_model_json(model_text)
 
 

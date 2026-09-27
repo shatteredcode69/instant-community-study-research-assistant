@@ -12,7 +12,7 @@ This project intentionally uses exactly three AWS services:
 
 1. **AWS Amplify Hosting** serves the static frontend.
 2. **AWS Lambda** receives the request through a Lambda Function URL.
-3. **Amazon Bedrock** uses Claude 3 Haiku to generate the study guide.
+3. **Amazon Bedrock** uses Amazon Nova Lite to generate the study guide.
 
 There is no API Gateway, S3 bucket, database, authentication service, or frontend framework. Documents are parsed locally in the browser. Only extracted text is sent to Lambda.
 
@@ -20,9 +20,9 @@ There is no API Gateway, S3 bucket, database, authentication service, or fronten
 
 You need:
 
-- An AWS account and an AWS region where Claude 3 Haiku is available
+- An AWS account and an AWS region where Amazon Nova Lite is available
 - A GitHub account and repository access
-- AWS Bedrock model access enabled for `anthropic.claude-3-haiku-20240307-v1:0`
+- AWS Bedrock model access enabled for `amazon.nova-lite-v1:0`
 - The files in this repository
 
 Choose one AWS region and use it consistently for Bedrock and Lambda. Model availability and pricing vary by region.
@@ -35,7 +35,7 @@ Choose one AWS region and use it consistently for Bedrock and Lambda. Model avai
 4. Select runtime **Python 3.12**.
 5. Create a new execution role with basic Lambda permissions.
 6. Open **Configuration > General configuration** and set memory to `256 MB` and timeout to `30 seconds`.
-7. Open **Configuration > Environment variables** and add `BEDROCK_MODEL_ID` with value `anthropic.claude-3-haiku-20240307-v1:0`.
+7. Open **Configuration > Environment variables** and add `BEDROCK_MODEL_ID` with value `amazon.nova-lite-v1:0`.
 8. Open the **Code** tab and replace the default file with [`lambda_function.py`](lambda_function.py).
 9. Set the handler to `lambda_function.lambda_handler` if the console shows a different handler.
 10. Choose **Deploy**.
@@ -46,13 +46,13 @@ The handler accepts `POST {"text":"..."}`, limits input to 20,000 characters, in
 
 Open the Lambda function's **Configuration > Permissions** page. Open the execution role in IAM, choose **Add permissions > Create inline policy**, select the JSON editor, and paste the contents of [`iam-policy.json`](iam-policy.json).
 
-The policy allows only `bedrock:InvokeModel` for Claude 3 Haiku foundation models and basic CloudWatch Logs actions. Save the policy and return to Lambda. Do not add administrator permissions to the Lambda role.
+The policy allows only `bedrock:InvokeModel` for the Amazon Nova Lite foundation model and basic CloudWatch Logs actions. Save the policy and return to Lambda. Do not add administrator permissions to the Lambda role.
 
 ## Step 3: Enable Bedrock Model Access
 
 1. Open the Amazon Bedrock console in the same region as the Lambda function.
 2. Open **Model access**.
-3. Request or enable access to Anthropic Claude 3 Haiku.
+3. Request or enable access to Amazon Nova Lite.
 4. Wait until access is granted before testing Lambda.
 
 If Bedrock returns an access or model-not-found error, check the region and model access first.

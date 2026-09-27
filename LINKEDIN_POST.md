@@ -16,7 +16,7 @@ The entire AWS architecture uses only three services:
 
 1. AWS Amplify for the frontend
 2. AWS Lambda with a Function URL for the backend
-3. Amazon Bedrock with Claude 3 Haiku for analysis
+3. Amazon Bedrock with Amazon Nova Lite for analysis
 
 There is no API Gateway, no S3 document bucket, no database, and no framework-heavy application layer.
 
