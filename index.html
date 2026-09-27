@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Turn research and lecture notes into clear study material." />
+    <title>Study Signal | Instant research assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="masthead">
+        <a class="brand" href="/" aria-label="Study Signal home">
+          <span class="brand-mark" aria-hidden="true">S</span>
+          <span>Study Signal</span>
+        </a>
+        <span class="service-badge"><span class="status-dot"></span> Bedrock powered</span>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Instant research &amp; study assistant</p>
+        <h1 id="page-title">Make dense ideas<br /><em>click.</em></h1>
+        <p class="lede">Paste a transcript, code snippet, or abstract. Get the signal, the decisions, and a few questions worth remembering.</p>
+      </section>
+
+      <section class="workspace" aria-label="Study assistant workspace">
+        <form id="study-form" class="input-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-kicker">01 / Source material</span>
+              <h2>What are you working through?</h2>
+            </div>
+            <span id="character-count" class="character-count">0 / 20,000</span>
+          </div>
+          <label class="sr-only" for="source-text">Source material</label>
+          <textarea id="source-text" name="text" maxlength="20000" required placeholder="Paste lecture notes, a research abstract, or a code excerpt here..."></textarea>
+          <div class="upload-row">
+            <label class="upload-button" for="document-input">
+              <span aria-hidden="true">&#8593;</span>
+              <span>Upload text document</span>
+            </label>
+            <input id="document-input" class="sr-only" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" />
+            <span id="file-status" class="file-status">TXT, MD, CSV, or JSON · max 2 MB</span>
+          </div>
+          <div class="input-footer">
+            <span class="input-hint">Files stay in your browser. Only the extracted text is sent for analysis.</span>
+            <button id="submit-button" class="primary-button" type="submit">
+              <span>Build study guide</span>
+              <span aria-hidden="true">&#8594;</span>
+            </button>
+          </div>
+        </form>
+
+        <section id="results-panel" class="results-panel" aria-live="polite">
+          <div class="empty-state">
+            <span class="empty-number">02</span>
+            <h2>Your distilled notes<br />will land here.</h2>
+            <p>Three focused sections. No filler.</p>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer"><span>Lightweight by design.</span><span>Built for curious people.</span></footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
