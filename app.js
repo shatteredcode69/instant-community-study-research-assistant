@@ -1,4 +1,4 @@
-const FUNCTION_URL = "REPLACE_WITH_LAMBDA_FUNCTION_URL";
+const FUNCTION_URL = "https://zidpszuu56ojhqzfpaqgn6diqi0bfcrm.lambda-url.us-east-1.on.aws/";
 const form = document.querySelector("#study-form");
 const textInput = document.querySelector("#source-text");
 const count = document.querySelector("#character-count");
