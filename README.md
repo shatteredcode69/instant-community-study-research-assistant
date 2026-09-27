@@ -77,6 +77,64 @@ const FUNCTION_URL = "REPLACE_WITH_LAMBDA_FUNCTION_URL";
 
 with the Function URL copied from AWS. Keep the URL in the frontend only; never put AWS access keys in this file.
 
+### Fix: `FunctionURLAllowInvokeAction` Already Exists
+
+If AWS shows:
+
+```text
+The statement id (FunctionURLAllowInvokeAction) provided already exists.
+```
+
+the Lambda Function URL permission already exists. Do not create another Function URL. Update the existing one instead:
+
+1. Open Lambda > `study-signal` > **Configuration > Function URL**.
+2. Choose **Edit** on the existing Function URL.
+3. Set CORS to:
+   - Allowed origin: `*` for initial testing, or your exact Amplify URL
+   - Allowed methods: `POST` and `OPTIONS`
+   - Allowed headers: `Content-Type`
+4. Save the configuration.
+
+The `OPTIONS` method matters because browser requests using `Content-Type: application/json` can send a CORS preflight request before the `POST`.
+
+You can make the same update with AWS CLI by saving this as `cors.json`:
+
+```json
+{
+  "AllowOrigins": ["*"],
+  "AllowMethods": ["POST", "OPTIONS"],
+  "AllowHeaders": ["Content-Type"],
+  "MaxAge": 86400
+}
+```
+
+Then run this in the same region as the function:
+
+```powershell
+aws lambda update-function-url-config `
+  --function-name study-signal `
+  --auth-type NONE `
+  --cors file://cors.json `
+  --region YOUR_REGION
+```
+
+Only if **Function URL** shows that no URL exists but the duplicate statement error remains, inspect the resource policy:
+
+```powershell
+aws lambda get-policy --function-name study-signal --region YOUR_REGION
+```
+
+If the policy contains the orphaned statement ID `FunctionURLAllowInvokeAction`, remove only that statement and create the Function URL once:
+
+```powershell
+aws lambda remove-permission `
+  --function-name study-signal `
+  --statement-id FunctionURLAllowInvokeAction `
+  --region YOUR_REGION
+```
+
+Do not remove this permission when an existing Function URL is working; update its CORS settings instead.
+
 ## Step 6: Understand Document Uploads
 
 The upload control supports `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files. PDF.js and Mammoth are loaded from public CDNs by [`index.html`](index.html).
